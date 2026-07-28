@@ -17,25 +17,6 @@
   --pink-400: #f472b6;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-lavender-50: var(--lavender-50);
-  --color-lavender-100: var(--lavender-100);
-  --color-lavender-200: var(--lavender-200);
-  --color-lavender-300: var(--lavender-300);
-  --color-lavender-400: var(--lavender-400);
-  --color-lavender-500: var(--lavender-500);
-  --color-lavender-600: var(--lavender-600);
-  --color-pink-50: var(--pink-50);
-  --color-pink-100: var(--pink-100);
-  --color-pink-200: var(--pink-200);
-  --color-pink-300: var(--pink-300);
-  --color-pink-400: var(--pink-400);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
 body {
   background: var(--background);
   color: var(--foreground);

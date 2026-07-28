@@ -9,54 +9,43 @@ import {
   UsersRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot, updateDoc } from "firebase/firestore";
 import AuthGuard from "../components/auth/AuthGuard";
 import StatCard from "../components/doctor/StatCard";
-import PatientCard from "../components/doctor/PatientCard";
 import RoleNavigation from "../components/RoleNavigation";
+import LiveLocationCard from "../components/dashboard/LiveLocationCard";
 import { db } from "@/lib/firebase";
 import { useAuth } from "../components/auth/AuthProvider";
 
+type ReportRecord = {
+  id: string;
+  userId: string;
+  reportName?: string;
+  reportType?: string;
+  downloadURL?: string;
+  uploadedAt?: { toDate?: () => Date } | null;
+  aiAnalysisStatus?: string;
+  aiAnalysisResult?: {
+    healthScore?: number;
+    riskLevel?: string;
+    healthSummary?: string;
+  };
+  doctorNotes?: string;
+};
+
 const stats = [
-  { title: "Hospital Statistics", value: "24 Active Cases", icon: Activity, accent: "bg-pink-100 text-pink-700" },
-  { title: "Today's Appointments", value: "12", icon: ClipboardList, accent: "bg-violet-100 text-violet-700" },
-  { title: "High Risk Mothers", value: "5", icon: HeartPulse, accent: "bg-rose-100 text-rose-700" },
-  { title: "Pending Referrals", value: "3", icon: AlertTriangle, accent: "bg-amber-100 text-amber-700" },
-];
-
-const appointments = [
-  {
-    patientName: "Lakshmi Devi",
-    village: "Kothapalli",
-    ashaWorker: "Anitha",
-    riskScore: "Low",
-    appointmentDate: "Today · 10:30 AM",
-    section: "appointment" as const,
-  },
-  {
-    patientName: "Neela Kumari",
-    village: "Madanpur",
-    ashaWorker: "Sowmya",
-    riskScore: "High",
-    appointmentDate: "Today · 12:00 PM",
-    section: "referral" as const,
-  },
-];
-
-const reports = [
-  {
-    patientName: "Rani Rao",
-    village: "Shivnagar",
-    ashaWorker: "Priya",
-    riskScore: "Medium",
-    appointmentDate: "Uploaded Today",
-    section: "report" as const,
-  },
+  { title: "Hospital Statistics", value: "0 Active Cases", icon: Activity, accent: "bg-pink-100 text-pink-700" },
+  { title: "Today's Appointments", value: "0", icon: ClipboardList, accent: "bg-violet-100 text-violet-700" },
+  { title: "High Risk Mothers", value: "0", icon: HeartPulse, accent: "bg-rose-100 text-rose-700" },
+  { title: "Pending Referrals", value: "0", icon: AlertTriangle, accent: "bg-amber-100 text-amber-700" },
 ];
 
 export default function DoctorDashboard() {
   const { user } = useAuth();
   const [userData, setUserData] = useState<any>(null);
+  const [reports, setReports] = useState<ReportRecord[]>([]);
+  const [notesDraft, setNotesDraft] = useState<Record<string, string>>({});
+  const [savingNotes, setSavingNotes] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -75,7 +64,41 @@ export default function DoctorDashboard() {
     void loadUserData();
   }, [user]);
 
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "reports"), (snapshot) => {
+      const reportList = snapshot.docs
+        .map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as Omit<ReportRecord, "id">) }))
+        .sort((a, b) => {
+          const aTime = a.uploadedAt?.toDate ? a.uploadedAt.toDate().getTime() : 0;
+          const bTime = b.uploadedAt?.toDate ? b.uploadedAt.toDate().getTime() : 0;
+          return bTime - aTime;
+        });
+      setReports(reportList);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const displayName = userData?.fullName || user?.displayName || "Doctor";
+  const highRiskCount = reports.filter((report) => (report.aiAnalysisResult?.riskLevel || "Medium") === "High").length;
+  const statValues = [
+    { title: "Hospital Statistics", value: `${reports.length} Active Cases`, icon: Activity, accent: "bg-pink-100 text-pink-700" },
+    { title: "Today's Appointments", value: `${reports.length}`, icon: ClipboardList, accent: "bg-violet-100 text-violet-700" },
+    { title: "High Risk Mothers", value: `${highRiskCount}`, icon: HeartPulse, accent: "bg-rose-100 text-rose-700" },
+    { title: "Pending Referrals", value: `${Math.max(0, reports.length - 1)}`, icon: AlertTriangle, accent: "bg-amber-100 text-amber-700" },
+  ];
+
+  const handleSaveNotes = async (reportId: string) => {
+    const note = notesDraft[reportId] || "";
+    setSavingNotes((prev) => ({ ...prev, [reportId]: true }));
+    try {
+      await updateDoc(doc(db, "reports", reportId), { doctorNotes: note });
+    } catch (error) {
+      console.error("Unable to save notes", error);
+    } finally {
+      setSavingNotes((prev) => ({ ...prev, [reportId]: false }));
+    }
+  };
 
   return (
     <AuthGuard allowedRoles={["doctor"]}>
@@ -95,7 +118,7 @@ export default function DoctorDashboard() {
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {stats.map(({ title, value, icon: Icon, accent }) => (
+          {statValues.map(({ title, value, icon: Icon, accent }) => (
             <StatCard key={title} title={title} value={value} icon={<Icon size={18} />} accent={accent} />
           ))}
         </div>
@@ -113,9 +136,20 @@ export default function DoctorDashboard() {
             </div>
 
             <div className="mt-6 grid gap-4">
-              {appointments.map((patient) => (
-                <PatientCard key={patient.patientName} {...patient} />
-              ))}
+              {reports.length === 0 ? (
+                <p className="text-sm text-gray-600">No appointments to review yet.</p>
+              ) : (
+                reports.map((report) => (
+                  <div key={report.id} className="rounded-[24px] border border-pink-100 bg-white p-5 shadow-sm">
+                    <h3 className="text-lg font-semibold text-gray-800">{report.reportName || "Uploaded Report"}</h3>
+                    <p className="mt-1 text-sm text-gray-500">{report.reportType || "Document"}</p>
+                    <div className="mt-3 rounded-2xl bg-violet-50 p-3 text-sm text-gray-700">
+                      <p><span className="font-semibold">AI Analysis:</span> {report.aiAnalysisResult?.healthSummary || "Pending"}</p>
+                      <p className="mt-1"><span className="font-semibold">Risk Level:</span> {report.aiAnalysisResult?.riskLevel || "Pending"}</p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </section>
 
@@ -139,15 +173,60 @@ export default function DoctorDashboard() {
               </div>
             </div>
 
+            <LiveLocationCard mode="list" title="Latest Patient Locations" description="Review the latest live coordinates for patients who are sharing location." />
+
             <div className="rounded-[28px] border border-emerald-100 bg-emerald-50/70 p-6 shadow-sm">
               <div className="flex items-center gap-2">
                 <FileText size={18} className="text-emerald-700" />
                 <h2 className="text-xl font-semibold text-emerald-700">Recent Uploaded Reports</h2>
               </div>
               <div className="mt-4 grid gap-4">
-                {reports.map((report) => (
-                  <PatientCard key={report.patientName} {...report} />
-                ))}
+                {reports.length === 0 ? (
+                  <p className="text-sm text-gray-600">No uploaded reports yet.</p>
+                ) : (
+                  reports.map((report) => {
+                    const risk = report.aiAnalysisResult?.riskLevel || "Medium";
+                    const score = report.aiAnalysisResult?.healthScore ? `${report.aiAnalysisResult.healthScore}/100` : "Pending";
+                    return (
+                      <div key={report.id} className="rounded-[24px] border border-pink-100 bg-white p-5 shadow-sm">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-800">{report.reportName || "Uploaded Report"}</h3>
+                            <p className="mt-1 text-sm text-gray-500">{report.reportType || "Document"}</p>
+                          </div>
+                          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${risk === "High" ? "bg-rose-100 text-rose-700" : risk === "Medium" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
+                            AI Risk: {risk}
+                          </span>
+                        </div>
+
+                        <div className="mt-4 rounded-2xl bg-violet-50 p-3 text-sm text-gray-700">
+                          <p><span className="font-semibold">Health Score:</span> {score}</p>
+                          <p className="mt-1"><span className="font-semibold">AI Summary:</span> {report.aiAnalysisResult?.healthSummary || "Analysis pending"}</p>
+                        </div>
+
+                        <div className="mt-4 rounded-2xl border border-pink-100 bg-pink-50 p-3 text-sm text-gray-700">
+                          <p className="font-semibold text-pink-700">Doctor Notes</p>
+                          <textarea
+                            value={notesDraft[report.id] ?? report.doctorNotes ?? ""}
+                            onChange={(event) =>
+                              setNotesDraft((prev) => ({ ...prev, [report.id]: event.target.value }))
+                            }
+                            className="mt-2 w-full rounded-xl border border-pink-200 bg-white p-2 text-sm"
+                            rows={3}
+                            placeholder="Add notes for this case"
+                          />
+                          <button
+                            onClick={() => handleSaveNotes(report.id)}
+                            disabled={savingNotes[report.id]}
+                            className="mt-3 rounded-full bg-pink-600 px-3 py-2 text-sm font-semibold text-white"
+                          >
+                            {savingNotes[report.id] ? "Saving..." : "Save Notes"}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           </section>

@@ -10,6 +10,7 @@ const links = [
   { href: "/dashboard", label: "Pregnant Dashboard" },
   { href: "/asha-dashboard", label: "ASHA Dashboard" },
   { href: "/doctor-dashboard", label: "PHC Dashboard" },
+  { href: "/community", label: "Community" },
 ];
 
 export default function RoleNavigation() {

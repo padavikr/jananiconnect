@@ -2,7 +2,7 @@
 
 import { Activity, HeartPulse, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot } from "firebase/firestore";
 import AuthGuard from "../components/auth/AuthGuard";
 import AppointmentCard from "../components/dashboard/AppointmentCard";
 import EmergencySOSCard from "../components/dashboard/EmergencySOSCard";
@@ -13,13 +13,46 @@ import SectionCard from "../components/dashboard/SectionCard";
 import VaccinationTrackerCard from "../components/dashboard/VaccinationTrackerCard";
 import NearbyHospitals from "../components/NearbyHospitals";
 import JananiAIChatbot from "../components/JananiAIChatbot";
+import LiveLocationCard from "../components/dashboard/LiveLocationCard";
 import { db } from "@/lib/firebase";
 import { useAuth } from "../components/auth/AuthProvider";
+
+type ReportRecord = {
+  id: string;
+  userId: string;
+  reportName?: string;
+  reportType?: string;
+  downloadURL?: string;
+  uploadedAt?: { toDate?: () => Date } | null;
+  aiAnalysisStatus?: string;
+};
+
+type AnalysisRecord = {
+  id: string;
+  reportId: string;
+  userId: string;
+  summary?: string;
+  abnormalities?: string[];
+  healthScore?: number;
+  riskLevel?: string;
+  diet?: string[];
+  precautions?: string[];
+  doctorAdvice?: string;
+  analysis?: {
+    healthSummary?: string;
+    summary?: string;
+    healthScore?: number;
+    riskLevel?: string;
+  };
+  createdAt?: { toDate?: () => Date } | null;
+};
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [latestReport, setLatestReport] = useState<ReportRecord | null>(null);
+  const [latestAnalysis, setLatestAnalysis] = useState<AnalysisRecord | null>(null);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -40,8 +73,57 @@ export default function Dashboard() {
     void loadUserData();
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubscribeReports = onSnapshot(collection(db, "reports"), (snapshot) => {
+      const reports = snapshot.docs
+        .map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as Omit<ReportRecord, "id">) }))
+        .filter((report) => report.userId === user.uid)
+        .sort((a, b) => {
+          const aTime = a.uploadedAt?.toDate ? a.uploadedAt.toDate().getTime() : 0;
+          const bTime = b.uploadedAt?.toDate ? b.uploadedAt.toDate().getTime() : 0;
+          return bTime - aTime;
+        });
+
+      setLatestReport(reports[0] ?? null);
+    });
+
+    const unsubscribeAnalysis = onSnapshot(collection(db, "aiAnalysis"), (snapshot) => {
+      const analyses = snapshot.docs
+        .map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as Omit<AnalysisRecord, "id">) }))
+        .filter((analysis) => analysis.userId === user.uid)
+        .sort((a, b) => {
+          const aTime = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+          const bTime = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+          return bTime - aTime;
+        });
+
+      setLatestAnalysis(analyses[0] ?? null);
+    });
+
+    return () => {
+      unsubscribeReports();
+      unsubscribeAnalysis();
+    };
+  }, [user]);
+
   const displayName = userData?.fullName || user?.displayName || "User";
   const greeting = new Date().getHours() < 12 ? "Good Morning" : new Date().getHours() < 17 ? "Good Afternoon" : "Good Evening";
+  const healthScore = latestAnalysis?.healthScore ?? latestAnalysis?.analysis?.healthScore ?? 0;
+  const healthSummary = latestAnalysis?.summary ?? latestAnalysis?.analysis?.summary ?? latestAnalysis?.analysis?.healthSummary ?? "Upload a report to receive your latest AI summary.";
+  const riskLevel = latestAnalysis?.riskLevel ?? latestAnalysis?.analysis?.riskLevel ?? "Pending";
+  const lastUpdated = latestAnalysis?.createdAt?.toDate
+    ? latestAnalysis.createdAt.toDate().toLocaleDateString("en", {
+        month: "short",
+        day: "numeric",
+      })
+    : latestReport?.uploadedAt?.toDate
+      ? latestReport.uploadedAt.toDate().toLocaleDateString("en", {
+          month: "short",
+          day: "numeric",
+        })
+      : "No updates yet";
 
   return (
     <AuthGuard allowedRoles={["pregnant"]}>
@@ -79,9 +161,13 @@ export default function Dashboard() {
               accent="bg-pink-100 text-pink-700"
             >
               <div className="rounded-[24px] border border-pink-100 bg-white/80 p-5">
-                <h1 className="text-5xl font-bold text-green-600">92%</h1>
-                <p className="mt-2 font-semibold text-green-600">Healthy Pregnancy</p>
-                <p className="mt-2 text-gray-500">Last Updated: Today</p>
+                <h1 className="text-5xl font-bold text-green-600">{healthScore ? `${healthScore}%` : "—"}</h1>
+                <p className="mt-2 font-semibold text-green-600">
+                  {healthScore >= 92 ? "Healthy Pregnancy" : healthScore >= 85 ? "Needs close monitoring" : "Needs review"}
+                </p>
+                <p className="mt-3 text-sm text-gray-700">{healthSummary}</p>
+                <p className="mt-3 text-sm text-gray-500">Risk Level: {riskLevel}</p>
+                <p className="mt-2 text-gray-500">Last Updated: {lastUpdated}</p>
               </div>
             </SectionCard>
 
@@ -104,6 +190,8 @@ export default function Dashboard() {
                 Upload Report
               </button>
             </SectionCard>
+
+            <LiveLocationCard />
           </div>
 
           <div className="space-y-6">

@@ -144,7 +144,7 @@ export default function UploadReport() {
         aiAnalysisStatus: "Pending",
       });
 
-      const analysisResponse = await fetch("/api/ai-analysis", {
+      const analysisResponse = await fetch("/api/analyze", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

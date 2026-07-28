@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { addDoc, collection, doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  doc,
+  serverTimestamp,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { analyzeMedicalReport } from "@/lib/gemini";
+import { analyzeMedicalReport, type GeminiAnalysisResult } from "@/lib/gemini";
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,3 +75,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

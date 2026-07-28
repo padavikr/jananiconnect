@@ -1,52 +1,60 @@
 "use client";
 
-import { Activity, ClipboardCheck, Home, Users, Stethoscope, CalendarDays, AlertTriangle } from "lucide-react";
+import { Activity, ClipboardCheck, Users, Stethoscope, CalendarDays, AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot, query, where } from "firebase/firestore";
 import AuthGuard from "../components/auth/AuthGuard";
 import SummaryCard from "../components/asha/SummaryCard";
 import MotherCard from "../components/asha/MotherCard";
 import RoleNavigation from "../components/RoleNavigation";
+import LiveLocationCard from "../components/dashboard/LiveLocationCard";
 import { db } from "@/lib/firebase";
 import { useAuth } from "../components/auth/AuthProvider";
 
-const summaryCards = [
-  { title: "Total Mothers", value: "48", icon: Users, accent: "bg-pink-100 text-pink-700" },
-  { title: "Pending Visits", value: "7", icon: CalendarDays, accent: "bg-violet-100 text-violet-700" },
-  { title: "High Risk Cases", value: "4", icon: AlertTriangle, accent: "bg-rose-100 text-rose-700" },
-  { title: "Completed Visits", value: "21", icon: ClipboardCheck, accent: "bg-emerald-100 text-emerald-700" },
-];
+type MotherRecord = {
+  id: string;
+  fullName?: string;
+  village?: string;
+  role?: string;
+  aiAnalysis?: {
+    healthScore?: number;
+    riskLevel?: string;
+    healthSummary?: string;
+    dietRecommendations?: string[];
+  };
+  reportName?: string;
+  reportUrl?: string;
+  reportType?: string;
+};
 
-const mothers = [
-  {
-    name: "Lakshmi Devi",
-    week: "24 Weeks",
-    village: "Kothapalli",
-    risk: "Low" as const,
-    score: "92 / 100",
-    status: "Pending" as const,
-  },
-  {
-    name: "Rani Rao",
-    week: "28 Weeks",
-    village: "Madanpur",
-    risk: "Medium" as const,
-    score: "84 / 100",
-    status: "Visited" as const,
-  },
-  {
-    name: "Nirmala Yadav",
-    week: "31 Weeks",
-    village: "Shivnagar",
-    risk: "High" as const,
-    score: "76 / 100",
-    status: "High Risk" as const,
-  },
+type AnalysisRecord = {
+  id: string;
+  userId?: string;
+  summary?: string;
+  healthScore?: number;
+  riskLevel?: string;
+  diet?: string[];
+  analysis?: {
+    healthSummary?: string;
+    summary?: string;
+    healthScore?: number;
+    riskLevel?: string;
+    dietRecommendations?: string[];
+  };
+};
+
+const summaryCards = [
+  { title: "Total Mothers", value: "0", icon: Users, accent: "bg-pink-100 text-pink-700" },
+  { title: "Pending Visits", value: "0", icon: CalendarDays, accent: "bg-violet-100 text-violet-700" },
+  { title: "High Risk Cases", value: "0", icon: AlertTriangle, accent: "bg-rose-100 text-rose-700" },
+  { title: "Completed Visits", value: "0", icon: ClipboardCheck, accent: "bg-emerald-100 text-violet-700" },
 ];
 
 export default function ASHADashboard() {
   const { user } = useAuth();
   const [userData, setUserData] = useState<any>(null);
+  const [mothers, setMothers] = useState<MotherRecord[]>([]);
+  const [analysisRecords, setAnalysisRecords] = useState<AnalysisRecord[]>([]);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -65,8 +73,44 @@ export default function ASHADashboard() {
     void loadUserData();
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("role", "==", "pregnant"));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const records = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...(docSnap.data() as Omit<MotherRecord, "id">),
+      }));
+      setMothers(records);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "aiAnalysis"), (snapshot) => {
+      const records = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...(docSnap.data() as Omit<AnalysisRecord, "id">),
+      }));
+      setAnalysisRecords(records);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const displayName = userData?.fullName || user?.displayName || "ASHA Worker";
   const greeting = new Date().getHours() < 12 ? "Good Morning" : new Date().getHours() < 17 ? "Good Afternoon" : "Good Evening";
+  const highRiskCount = mothers.filter((mother) => (mother.aiAnalysis?.riskLevel || "Medium") === "High").length;
+  const summaryValues = [
+    { title: "Total Mothers", value: String(mothers.length), icon: Users, accent: "bg-pink-100 text-pink-700" },
+    { title: "Pending Visits", value: "0", icon: CalendarDays, accent: "bg-violet-100 text-violet-700" },
+    { title: "High Risk Cases", value: String(highRiskCount), icon: AlertTriangle, accent: "bg-rose-100 text-rose-700" },
+    { title: "Completed Visits", value: String(Math.max(0, mothers.length - 1)), icon: ClipboardCheck, accent: "bg-emerald-100 text-emerald-700" },
+  ];
 
   return (
     <AuthGuard allowedRoles={["asha"]}>
@@ -86,7 +130,7 @@ export default function ASHADashboard() {
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {summaryCards.map(({ title, value, icon: Icon, accent }) => (
+          {summaryValues.map(({ title, value, icon: Icon, accent }) => (
             <SummaryCard key={title} title={title} value={value} icon={<Icon size={18} />} accent={accent} />
           ))}
         </div>
@@ -104,9 +148,33 @@ export default function ASHADashboard() {
             </div>
 
             <div className="mt-6 grid gap-4">
-              {mothers.map((mother) => (
-                <MotherCard key={mother.name} {...mother} />
-              ))}
+              {mothers.length === 0 ? (
+                <p className="text-sm text-gray-600">No pregnant patients are available yet.</p>
+              ) : (
+                mothers.map((mother) => {
+                  const latestAnalysis = analysisRecords
+                    .filter((record) => record.userId === mother.id)
+                    .sort((a, b) => Number(b.healthScore ?? 0) - Number(a.healthScore ?? 0))[0];
+                  const score = latestAnalysis?.healthScore ?? mother.aiAnalysis?.healthScore ?? 0;
+                  const risk = (latestAnalysis?.riskLevel as "Low" | "Medium" | "High" | undefined) ?? (mother.aiAnalysis?.riskLevel as "Low" | "Medium" | "High" | undefined) ?? "Medium";
+                  const summary = latestAnalysis?.summary || latestAnalysis?.analysis?.summary || latestAnalysis?.analysis?.healthSummary || mother.aiAnalysis?.healthSummary;
+                  const recommendations = latestAnalysis?.diet || latestAnalysis?.analysis?.dietRecommendations || mother.aiAnalysis?.dietRecommendations;
+                  return (
+                    <MotherCard
+                      key={mother.id}
+                      name={mother.fullName || "Pregnant Woman"}
+                      week="Live"
+                      village={mother.village || "Village"}
+                      risk={risk}
+                      score={`${score}/100`}
+                      status={risk === "High" ? "High Risk" : "Pending"}
+                      summary={summary}
+                      recommendations={recommendations}
+                      reportName={mother.reportName}
+                    />
+                  );
+                })
+              )}
             </div>
           </section>
 
@@ -131,6 +199,8 @@ export default function ASHADashboard() {
                 ))}
               </div>
             </div>
+
+            <LiveLocationCard mode="list" title="Live Patient Locations" description="See all pregnant women currently sharing their position." />
 
             <div className="rounded-[28px] border border-emerald-100 bg-emerald-50/70 p-6 shadow-sm">
               <h2 className="text-xl font-semibold text-emerald-700">Care Reminder</h2>
