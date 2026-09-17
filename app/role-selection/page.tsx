@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { HeartPulse, ShieldCheck, Stethoscope } from "lucide-react";
+import PremiumPageShell from "../components/PremiumPageShell";
 import RoleNavigation from "../components/RoleNavigation";
 import RoleSelectionCard from "../components/RoleSelectionCard";
 
@@ -32,12 +33,16 @@ const roles = [
 
 export default function RoleSelectionPage() {
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(244,114,182,0.16),_transparent_25%),linear-gradient(135deg,_#fdf2f8_0%,_#f5f3ff_100%)] px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl">
-        <div className="rounded-[32px] border border-pink-100 bg-white/80 p-8 shadow-[0_24px_60px_-20px_rgba(190,24,93,0.35)] backdrop-blur-sm sm:p-10 lg:p-12">
+    <PremiumPageShell
+      eyebrow="Choose your path"
+      title="Start your care journey with the right support."
+      description="Janani Connect brings pregnant women, ASHA workers, and doctors together in one intelligent healthcare experience."
+      contentClassName="mx-auto max-w-6xl"
+    >
+      <div className="rounded-[32px] border border-pink-100 bg-white/80 p-8 shadow-[0_24px_60px_-20px_rgba(190,24,93,0.35)] backdrop-blur-sm sm:p-10 lg:p-12">
           <RoleNavigation />
 
-          <div className="max-w-3xl">
+          <div className="mt-6 max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-pink-500">
               Choose Your Role
             </p>
@@ -70,7 +75,6 @@ export default function RoleSelectionPage() {
             </Link>
           </div>
         </div>
-      </div>
-    </div>
+    </PremiumPageShell>
   );
 }

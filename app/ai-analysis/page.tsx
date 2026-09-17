@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
+import PremiumPageShell from "../components/PremiumPageShell";
 import { useSearchParams } from "next/navigation";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -113,112 +114,108 @@ function AIAnalysisContent() {
   const disclaimer = analysis?.disclaimer ?? "AI-generated insights are informational only and do not replace professional medical advice.";
 
   return (
-    <div className="min-h-screen bg-pink-50 p-6">
-      <h1 className="text-3xl font-bold text-pink-700">
-        🤖 AI Health Analysis
-      </h1>
-
-      <p className="mt-2 text-gray-600">
-        Your {typeof fileType === "string" && fileType.includes("/") ? fileType.split("/")[1] : "document"} report was reviewed successfully.
-      </p>
-
-      <div className="mt-4 rounded-2xl border border-pink-200 bg-pink-50 p-4 text-sm text-pink-700">
-        <p><strong>File:</strong> {fileName}</p>
-        <p><strong>Analyzed:</strong> {analyzedAt}</p>
-      </div>
-
-      {loading ? (
-        <div className="mt-8 flex flex-col items-center justify-center rounded-2xl bg-white p-8 shadow-lg">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-pink-200 border-t-pink-600" />
-          <p className="mt-4 text-pink-700">Getting your AI analysis...</p>
+    <PremiumPageShell
+      eyebrow="AI insights"
+      title="AI Health Analysis"
+      description={`Your ${typeof fileType === "string" && fileType.includes("/") ? fileType.split("/")[1] : "document"} report was reviewed successfully.`}
+    >
+      <div className="rounded-[32px] border border-pink-100 bg-white/80 p-4 shadow-[0_24px_60px_-20px_rgba(190,24,93,0.35)] backdrop-blur-sm sm:p-6">
+        <div className="rounded-[24px] border border-pink-200 bg-pink-50/70 p-4 text-sm text-pink-700">
+          <p><strong>File:</strong> {fileName}</p>
+          <p><strong>Analyzed:</strong> {analyzedAt}</p>
         </div>
-      ) : null}
 
-      {error ? (
-        <div className="mt-8 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {error}
-        </div>
-      ) : null}
-
-      {!loading && !error && analysis?.analysis ? (
-        <>
-          <div className="mt-8 rounded-2xl bg-white p-6 shadow-lg">
-            <h2 className="text-xl font-bold text-pink-700">❤️ AI Health Score</h2>
-
-            <h1 className="mt-4 text-5xl font-bold text-green-600">{score} / 100</h1>
-
-            <p className="mt-2 font-semibold text-green-600">{status}</p>
+        {loading ? (
+          <div className="mt-8 flex flex-col items-center justify-center rounded-[24px] border border-pink-100 bg-gradient-to-br from-white to-pink-50 p-8 shadow-sm">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-pink-200 border-t-pink-600" />
+            <p className="mt-4 text-pink-700">Getting your AI analysis...</p>
           </div>
+        ) : null}
 
-          <div className="mt-6 rounded-2xl bg-white p-6 shadow-lg">
-            <h2 className="text-xl font-bold text-pink-700">📋 Health Summary</h2>
-            <p className="mt-4 text-gray-700">{summary}</p>
-            <div className="mt-4 space-y-2">
-              <p>🟢 Risk Level : {riskLevel}</p>
+        {error ? (
+          <div className="mt-8 rounded-[24px] border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
+
+        {!loading && !error && analysis?.analysis ? (
+          <>
+            <div className="mt-8 rounded-[24px] border border-pink-100 bg-gradient-to-br from-white to-pink-50 p-6 shadow-sm">
+              <h2 className="text-xl font-bold text-pink-700">❤️ AI Health Score</h2>
+              <h1 className="mt-4 text-5xl font-bold text-green-600">{score} / 100</h1>
+              <p className="mt-2 font-semibold text-green-600">{status}</p>
             </div>
-          </div>
 
-          <div className="mt-6 rounded-2xl bg-white p-6 shadow-lg">
-            <h2 className="text-xl font-bold text-pink-700">⚠️ Abnormal Values</h2>
-            <ul className="mt-4 list-disc space-y-2 pl-6 text-gray-700">
-              {abnormalValues.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
+            <div className="mt-6 rounded-[24px] border border-pink-100 bg-white/80 p-6 shadow-sm">
+              <h2 className="text-xl font-bold text-pink-700">📋 Health Summary</h2>
+              <p className="mt-4 text-gray-700">{summary}</p>
+              <div className="mt-4 space-y-2">
+                <p>🟢 Risk Level : {riskLevel}</p>
+              </div>
+            </div>
 
-          <div className="mt-6 rounded-2xl bg-white p-6 shadow-lg">
-            <h2 className="text-xl font-bold text-pink-700">🥗 Diet Recommendations</h2>
-            <ul className="mt-4 list-disc space-y-2 pl-6 text-gray-700">
-              {dietRecommendations.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
+            <div className="mt-6 rounded-[24px] border border-pink-100 bg-white/80 p-6 shadow-sm">
+              <h2 className="text-xl font-bold text-pink-700">⚠️ Abnormal Values</h2>
+              <ul className="mt-4 list-disc space-y-2 pl-6 text-gray-700">
+                {abnormalValues.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
 
-          <div className="mt-6 rounded-2xl bg-white p-6 shadow-lg">
-            <h2 className="text-xl font-bold text-pink-700">🧘 Lifestyle Advice</h2>
-            <ul className="mt-4 list-disc space-y-2 pl-6 text-gray-700">
-              {precautions.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
+            <div className="mt-6 rounded-[24px] border border-pink-100 bg-white/80 p-6 shadow-sm">
+              <h2 className="text-xl font-bold text-pink-700">🥗 Diet Recommendations</h2>
+              <ul className="mt-4 list-disc space-y-2 pl-6 text-gray-700">
+                {dietRecommendations.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
 
-          <div className="mt-6 rounded-2xl bg-white p-6 shadow-lg">
-            <h2 className="text-xl font-bold text-pink-700">💊 Medications to Discuss</h2>
-            <ul className="mt-4 list-disc space-y-2 pl-6 text-gray-700">
-              {medicationsToDiscuss.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
+            <div className="mt-6 rounded-[24px] border border-pink-100 bg-white/80 p-6 shadow-sm">
+              <h2 className="text-xl font-bold text-pink-700">🧘 Lifestyle Advice</h2>
+              <ul className="mt-4 list-disc space-y-2 pl-6 text-gray-700">
+                {precautions.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
 
-          <div className="mt-6 rounded-2xl bg-white p-6 shadow-lg">
-            <h2 className="text-xl font-bold text-pink-700">🩺 Doctor Advice</h2>
-            <p className="mt-4 text-gray-700">{doctorAdvice}</p>
-          </div>
+            <div className="mt-6 rounded-[24px] border border-pink-100 bg-white/80 p-6 shadow-sm">
+              <h2 className="text-xl font-bold text-pink-700">💊 Medications to Discuss</h2>
+              <ul className="mt-4 list-disc space-y-2 pl-6 text-gray-700">
+                {medicationsToDiscuss.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
 
-          <div className="mt-6 rounded-2xl bg-white p-6 shadow-lg">
-            <h2 className="text-xl font-bold text-pink-700">🌸 Pregnancy Tips</h2>
-            <ul className="mt-4 list-disc space-y-2 pl-6 text-gray-700">
-              {pregnancyTips.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
+            <div className="mt-6 rounded-[24px] border border-pink-100 bg-white/80 p-6 shadow-sm">
+              <h2 className="text-xl font-bold text-pink-700">🩺 Doctor Advice</h2>
+              <p className="mt-4 text-gray-700">{doctorAdvice}</p>
+            </div>
 
-          <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-            <p className="font-semibold">Disclaimer</p>
-            <p className="mt-1">{disclaimer}</p>
-          </div>
-        </>
-      ) : null}
+            <div className="mt-6 rounded-[24px] border border-pink-100 bg-white/80 p-6 shadow-sm">
+              <h2 className="text-xl font-bold text-pink-700">🌸 Pregnancy Tips</h2>
+              <ul className="mt-4 list-disc space-y-2 pl-6 text-gray-700">
+                {pregnancyTips.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
 
-      <Link href="/dashboard" className="mt-8 block w-full rounded-lg bg-pink-600 py-3 text-center font-semibold text-white hover:bg-pink-700">
-        Back to Dashboard
-      </Link>
-    </div>
+            <div className="mt-6 rounded-[24px] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              <p className="font-semibold">Disclaimer</p>
+              <p className="mt-1">{disclaimer}</p>
+            </div>
+          </>
+        ) : null}
+
+        <Link href="/dashboard" className="mt-8 inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-pink-600 to-violet-600 py-3 text-center font-semibold text-white shadow-lg shadow-pink-200 transition hover:shadow-xl">
+          Back to Dashboard
+        </Link>
+      </div>
+    </PremiumPageShell>
   );
 }
 

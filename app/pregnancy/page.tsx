@@ -13,7 +13,7 @@ export default function PregnancyPage() {
     <div className="flex min-h-full flex-1 flex-col bg-background">
       <Navbar />
       <main className="flex-1">
-        <section className="relative overflow-hidden pt-28 pb-20 lg:pt-36 lg:pb-28">
+        <section className="relative overflow-hidden pt-24 pb-20 lg:pt-32 lg:pb-28">
           <div
             className="pointer-events-none absolute inset-0 bg-gradient-to-br from-pink-50 via-white to-lavender-50"
             aria-hidden="true"
@@ -23,7 +23,7 @@ export default function PregnancyPage() {
             aria-hidden="true"
           />
 
-          <div className="relative mx-auto max-w-4xl px-6 text-center lg:px-8">
+          <div className="relative mx-auto max-w-5xl px-6 text-center lg:px-8">
             <Link
               href="/life-stage"
               className="animate-fade-in-up mb-8 inline-flex items-center gap-1.5 text-sm font-medium text-lavender-500 transition-colors hover:text-lavender-600"
@@ -45,7 +45,7 @@ export default function PregnancyPage() {
               Back to Life Stages
             </Link>
 
-            <div className="animate-fade-in-up mx-auto max-w-2xl rounded-3xl border border-lavender-100 bg-white/80 p-10 shadow-xl shadow-lavender-100/60 backdrop-blur-sm sm:p-14">
+            <div className="animate-fade-in-up mx-auto max-w-3xl rounded-[32px] border border-pink-100 bg-white/80 p-10 shadow-[0_24px_60px_-20px_rgba(190,24,93,0.35)] backdrop-blur-sm sm:p-14">
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-lavender-500 to-pink-400 text-white shadow-lg shadow-lavender-300/40">
                 <svg
                   className="h-8 w-8"

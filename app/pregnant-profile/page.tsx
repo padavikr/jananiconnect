@@ -1,4 +1,5 @@
 import PregnantProfileCard from "../components/pregnant/PregnantProfileCard";
+import PremiumPageShell from "../components/PremiumPageShell";
 
 const profile = {
   name: "Lakshmi Devi",
@@ -30,5 +31,15 @@ const profile = {
 };
 
 export default function PregnantProfilePage() {
-  return <PregnantProfileCard {...profile} />;
+  return (
+    <PremiumPageShell
+      eyebrow="Maternal profile"
+      title="Pregnancy Profile"
+      description="A clear summary of your care plan, medical history, and upcoming appointments."
+    >
+      <div className="rounded-[32px] border border-pink-100 bg-white/80 p-4 shadow-[0_24px_60px_-20px_rgba(190,24,93,0.35)] backdrop-blur-sm sm:p-6">
+        <PregnantProfileCard {...profile} />
+      </div>
+    </PremiumPageShell>
+  );
 }

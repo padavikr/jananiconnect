@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import PremiumPageShell from "../components/PremiumPageShell";
 import {
   addDoc,
   collection,
@@ -185,17 +186,14 @@ export default function UploadReport() {
   };
 
   return (
-    <div className="min-h-screen bg-pink-50 p-6">
-      <h1 className="text-3xl font-bold text-pink-700">
-        📄 Upload Medical Report
-      </h1>
-
-      <p className="mt-2 text-gray-600">
-        Upload your pregnancy report for AI analysis.
-      </p>
-
-      <div className="mt-8 rounded-2xl bg-white p-6 shadow-lg">
-        <h2 className="text-xl font-bold text-pink-700">Select Your Report</h2>
+    <PremiumPageShell
+      eyebrow="Care intake"
+      title="Upload Medical Report"
+      description="Share pregnancy reports securely and receive AI-guided insights in moments."
+    >
+      <div className="rounded-[32px] border border-pink-100 bg-white/80 p-4 shadow-[0_24px_60px_-20px_rgba(190,24,93,0.35)] backdrop-blur-sm sm:p-6">
+        <div className="rounded-[24px] border border-pink-100 bg-gradient-to-br from-white to-pink-50 p-6 shadow-sm">
+          <h2 className="text-xl font-bold text-pink-700">Select Your Report</h2>
 
         <input
           type="file"
@@ -242,7 +240,7 @@ export default function UploadReport() {
         ) : null}
       </div>
 
-      <div className="mt-8 rounded-2xl bg-white p-6 shadow-lg">
+      <div className="mt-8 rounded-[24px] border border-pink-100 bg-white/80 p-6 shadow-sm">
         <h2 className="text-xl font-bold text-pink-700">My Reports</h2>
 
         {reports.length === 0 ? (
@@ -254,7 +252,7 @@ export default function UploadReport() {
             {reports.map((report) => (
               <div
                 key={report.id}
-                className="rounded-lg border border-gray-200 bg-gray-50 p-4"
+                className="rounded-[20px] border border-pink-100 bg-pink-50/70 p-4"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>

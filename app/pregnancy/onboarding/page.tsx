@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Navbar from "../../components/Navbar";
+import PremiumPageShell from "../../components/PremiumPageShell";
 import Footer from "../../components/Footer";
 import AuthGuard from "../../components/auth/AuthGuard";
 import OnboardingForm from "./components/OnboardingForm";
@@ -16,7 +17,7 @@ export default function OnboardingPage() {
       <div className="flex min-h-full flex-1 flex-col bg-background">
       <Navbar />
       <main className="flex-1">
-        <section className="relative overflow-hidden pt-28 pb-20 lg:pt-32 lg:pb-28">
+        <section className="relative overflow-hidden pt-24 pb-20 lg:pt-28 lg:pb-28">
           <div
             className="pointer-events-none absolute inset-0 bg-gradient-to-br from-lavender-50 via-white to-pink-50"
             aria-hidden="true"
@@ -52,7 +53,7 @@ export default function OnboardingPage() {
               Back to Pregnancy Module
             </Link>
 
-            <div className="rounded-3xl border border-lavender-100 bg-white/90 p-8 shadow-xl shadow-lavender-100/50 backdrop-blur-sm sm:p-10">
+            <div className="rounded-[32px] border border-pink-100 bg-white/80 p-8 shadow-[0_24px_60px_-20px_rgba(190,24,93,0.35)] backdrop-blur-sm sm:p-10">
               <div className="mb-8 text-center">
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-lavender-500 to-pink-400 text-white shadow-md shadow-lavender-200/50">
                   <svg
